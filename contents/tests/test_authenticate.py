@@ -1,8 +1,9 @@
-import time
+import sys,os,time
 import unittest
 import json
 from unittest import mock
 
+sys.path.append(os.getcwd())
 from contents.salt import SaltApiNodeStepPlugin
 
 
