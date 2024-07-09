@@ -23,6 +23,16 @@ class NodeStepException(Exception):
         super().__init__(self.message)
 
 
+class SaltApiException(Exception):
+    """
+    Represents an exception dispatching to salt-api.
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 class SaltApiNodeStepFailureReason(Exception):
 
     def __init__(self, error_type, message):
@@ -92,6 +102,38 @@ class SaltApiNodeStepPlugin(object):
                 raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
         except Exception:
             raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
+
+    def extract_output_for_jid(self, authToken, jid, minionId):
+        """
+        Extracts the minion job response by calling the job resource.
+        :param authToken: The token of the session
+        :param jid: The job id
+        :param minionId: The minion id
+        :return the host response or null if none is available encoded in json.
+        """
+
+        headers = {
+            "X-Auth-Token": authToken,
+            "Accept": "application/json"
+        }
+
+        url = f"{self.endpoint}/jobs/{jid}"
+
+        response = requests.get(url,
+                                headers=headers)
+
+        if response.status_code == 200:
+
+            responses = response.json()["return"]
+
+            if len(responses) > 1:
+                raise(SaltApiException("Too many responses received: %s" % response.json()))
+
+            elif len(responses) == 1:
+                minion_response = responses[0]
+                if minionId in minion_response:
+                    logger.debug("Received response for jobs/%s = %s", jid, response.json())
+                    return minion_response[minionId]
 
     def authenticate(self):
         """
