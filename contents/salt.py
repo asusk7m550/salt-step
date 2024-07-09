@@ -37,8 +37,8 @@ class SaltApiNodeStepPlugin(object):
         logger.info("Authenticating with salt-api endpoint: [%s]", url)
 
         response = requests.post(url,
-            headers=headers,
-            data=json.dumps(data))
+                                 headers=headers,
+                                 data=json.dumps(data))
 
         if response.status_code == 200:
             try:
