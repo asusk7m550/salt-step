@@ -3,6 +3,7 @@
 import sys, os
 import requests
 import json
+import shlex
 import logging
 from urllib.parse import urlparse
 
@@ -24,6 +25,16 @@ class NodeStepException(Exception):
         self.message = message
         self.failure_reason = failure_reason
         self.nodename = nodename
+        super().__init__(self.message)
+
+
+class SaltTargettingMismatchException(Exception):
+    """
+    Represents a mismatch between salt was told to target and what salt actually targetted.
+    """
+
+    def __init__(self, message):
+        self.message = message
         super().__init__(self.message)
 
 
@@ -83,6 +94,73 @@ class SaltApiNodeStepPlugin(object):
         self.password = password
         self.eauth = eauth
         self.timer = ExponentialBackoffTimer(500, 15000)
+
+    def extract_secure_data(self):
+        """
+        Return collection of secure data values from data context.
+        """
+
+        secureOptions = {}
+        for envVariable in os.environ:
+            if envVariable[0:16] == 'RD_SECUREOPTION_':
+                secureOptions[envVariable[16:]] = os.environ.get(envVariable)
+
+        return secureOptions
+
+    def submit_job(self, authToken, minionId, function, secure_options={}):
+        """
+        Submits the job to salt-api using the class function and args
+        """
+
+        # Parse the function into its arguments
+        args = shlex.split(function)
+        params = {
+            'fun': args[0],
+            'tgt': minionId
+        }
+        printable_params = params.copy()
+
+        # Add the arguments to the params
+        for i in range(1, len(args)):
+            value = args[i]
+            params.setdefault('arg', []).append(value)
+            for k, s in secure_options.items():
+                value = value.replace(s, "****")
+            printable_params.setdefault('arg', []).append(value)
+
+        headers = {
+            "X-Auth-Token": authToken,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+
+        url = f"{self.endpoint}/minions"
+
+        logger.debug("Submitting job with arguments [%s]", printable_params)
+        logger.info("Submitting job with salt-api endpoint: [%s]", url)
+
+        response = requests.post(url,
+                                 headers=headers,
+                                 data=json.dumps(params))
+
+        if response.status_code == 202:
+
+            try:
+                minions_size = len(response.json()['return'][0]['minions'])
+                minions_output = response.json()['return'][0]['minions']
+            except KeyError:
+                minions_size = 0
+                minions_output = None
+
+            if minions_size != 1:
+                raise(SaltTargettingMismatchException("Expected minion delegation count of 1, was %d. Full minion string: (%s)" % (minions_size, minions_output)))
+
+            if minionId not in response.json()['return'][0]['minions']:
+                raise(SaltTargettingMismatchException("Minion dispatch mis-match. Expected:%s,  was:%s" % (minionId, minions_output)))
+
+            return response.json()["return"][0]["jid"]
+        else:
+            raise Exception("Expected response code %d, received %d. %s", 202, response.status_code, response.text())
 
     def validate(self):
 
