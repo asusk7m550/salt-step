@@ -3,7 +3,7 @@ import unittest
 import json
 from unittest import mock
 
-from salt import SaltApiNodeStepPlugin
+from contents.salt import SaltApiNodeStepPlugin
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):
