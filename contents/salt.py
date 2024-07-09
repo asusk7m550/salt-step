@@ -3,9 +3,62 @@
 import requests
 import json
 import logging
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
+
+# define Python user-defined exceptions
+class NodeStepException(Exception):
+    """
+    Represents an exception in the node step.
+    """
+
+    def __init__(self, message, failure_reason, nodename):
+
+        self.message = message
+        self.failure_reason = failure_reason
+        self.nodename = nodename
+        super().__init__(self.message)
+
+
+class SaltApiNodeStepFailureReason(Exception):
+
+    def __init__(self, error_type, message):
+
+        if error_type not in [
+            'EXIT_CODE',
+            'ARGUMENTS_MISSING',
+            'ARGUMENTS_INVALID',
+            'AUTHENTICATION_FAILURE',
+            'COMMUNICATION_FAILURE',
+            'SALT_API_FAILURE',
+            'SALT_TARGET_MISMATCH',
+            'INTERRUPTED'
+        ]:
+            raise ValueError('FailureReason %s now known' % error_type)
+
+        self.error_type = error_type
+        self.message = message
+
+    def __str__(self):
+        return self.error_type + ":" + self.message
+
+
+class SaltStepValidationException(NodeStepException):
+    """
+    Represents an exception when validating a field for plugin execution.
+    """
+
+    def __init__(self, fieldname, message, failure_reason, nodename):
+        self.fieldname = fieldname
+        self.message = message
+        self.failure_reason = failure_reason
+        self.nodename = nodename
+
+    def __dict__(self):
+        return {'reason': self.reason, 'fieldname': self.fieldname}
 
 
 class SaltApiNodeStepPlugin(object):
@@ -15,6 +68,30 @@ class SaltApiNodeStepPlugin(object):
         self.username = username
         self.password = password
         self.eauth = eauth
+
+    def validate(self):
+
+        if not self.endpoint:
+            raise SaltApiNodeStepFailureReason('ARGUMENTS_MISSING', 'SALT_API_END_POINT is a required property')
+
+        if not self.function:
+            raise SaltApiNodeStepFailureReason('ARGUMENTS_MISSING', 'FUNCTION is a required property')
+
+        if not self.eauth:
+            raise SaltApiNodeStepFailureReason('ARGUMENTS_MISSING', 'SALT_API_EAUTH is a required property')
+
+        if not self.username:
+            raise SaltApiNodeStepFailureReason('ARGUMENTS_MISSING', 'SALT_USER is a required property')
+
+        if not self.password:
+            raise SaltApiNodeStepFailureReason('ARGUMENTS_MISSING', 'SALT_PASSWORD is a required property')
+
+        try:
+            parsed_url = urlparse(self.endpoint)
+            if parsed_url.scheme not in ['http', 'https']:
+                raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
+        except:
+            raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
 
     def authenticate(self):
         """
