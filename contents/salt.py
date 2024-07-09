@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
+import sys, os
 import requests
 import json
 import logging
 from urllib.parse import urlparse
+
+sys.path.append(os.getcwd())
+from contents.util.exponential_backoff_timer import ExponentialBackoffTimer
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -78,6 +82,7 @@ class SaltApiNodeStepPlugin(object):
         self.username = username
         self.password = password
         self.eauth = eauth
+        self.timer = ExponentialBackoffTimer(500, 15000)
 
     def validate(self):
 
@@ -102,6 +107,17 @@ class SaltApiNodeStepPlugin(object):
                 raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
         except Exception:
             raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
+
+    def wait_for_jid_response(self, authToken, jid, minionId):
+        jid_resource = f"{self.endpoint}/jobs/{jid}"
+        logger.info("Polling for job status with salt-api endpoint: [%s]", jid_resource)
+        while True:
+            response = self.extract_output_for_jid(authToken, jid, minionId)
+            if response is not None:
+                return response
+
+            self.timer.wait_for_next()
+        pass
 
     def extract_output_for_jid(self, authToken, jid, minionId):
         """
