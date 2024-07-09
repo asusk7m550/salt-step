@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 sys.path.append(os.getcwd())
 from contents.util.exponential_backoff_timer import ExponentialBackoffTimer
+from contents.output.salt_return_handler_registry import returnHandlerRegistry
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -86,6 +87,16 @@ class SaltStepValidationException(NodeStepException):
         return {'reason': self.reason, 'fieldname': self.fieldname}
 
 
+class SaltReturnResponseParseException(RuntimeError):
+    """
+    Represents an exception while trying to parse a salt json minion response.
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 class SaltApiNodeStepPlugin(object):
 
     def __init__(self, endpoint=None, username=None, password=None, eauth='auto'):
@@ -94,6 +105,80 @@ class SaltApiNodeStepPlugin(object):
         self.password = password
         self.eauth = eauth
         self.timer = ExponentialBackoffTimer(500, 15000)
+
+    def execute_node_step(self):
+
+        # Parse environment variable to variables
+        optionData = {}
+        secureOptions = {}
+        config = {}
+        node = {}
+        for envVariable in os.environ:
+            if envVariable[0:10] == 'RD_OPTION_':
+                optionData[envVariable[10:]] = os.environ.get(envVariable)
+            elif envVariable[0:16] == 'RD_SECUREOPTION_':
+                secureOptions[envVariable[16:]] = os.environ.get(envVariable)
+            elif envVariable[0:10] == 'RD_CONFIG_':
+                config[envVariable[10:]] = os.environ.get(envVariable)
+            elif envVariable[0:8] == 'RD_NODE_':
+                node[envVariable[8:]] = os.environ.get(envVariable)
+
+        # Extract options from context.
+        if optionData == {}:
+            raise NodeStepException("Missing data context.", 'ARGUMENTS_MISSING', node)
+
+        self.endpoint = optionData['SALT_API_END_POINT']
+        self.function = config['FUNCTION']
+        self.eauth = optionData['SALT_API_EAUTH']
+        self.username = optionData['SALT_USER']
+        self.password = optionData['SALT_PASSWORD']
+
+        self.validate()
+
+        try:
+            # capability = getSaltApiCapability();
+            capability = "2019.2.0"
+            logger.debug("Using salt-api version: [%s]", capability)
+
+            authToken = self.authenticate()
+
+            if authToken is None:
+                raise NodeStepException("Authentication failure", 'AUTHENTICATION_FAILURE', node)
+
+            secureData = self.extract_secure_data()
+            dispatchedJid = self.submit_job(authToken, node['NAME'], self.function, secureData)
+            logger.info("Received jid [%s] for submitted job", dispatchedJid)
+            jobOutput = self.wait_for_jid_response(authToken, dispatchedJid, node['NAME'])
+            handler = returnHandlerRegistry(shlex.split(self.function)[0], None)
+            logger.debug("Using [%s] as salt's response handler", handler)
+            handler.extract_response(jobOutput)
+
+            self.logoutQuietly(authToken)
+
+            if handler.get_standard_output():
+                logger.info(handler.get_standard_output())
+
+            if handler.get_standard_error():
+                logger.info(handler.get_standard_error())
+                raise NodeStepException("Execution failed on minion with exit code %d" % handler.get_exit_code(), 'EXIT_CODE', node)
+
+        except SaltReturnResponseParseException as e:
+            raise NodeStepException(e, 'SALT_API_FAILURE', node)
+
+        except InterruptedError as e:
+            raise NodeStepException(e, 'INTERRUPTED', node)
+
+        except SaltTargettingMismatchException as e:
+            raise NodeStepException(e, 'SALT_TARGET_MISMATCH', node)
+
+        except SaltApiException as e:
+            raise NodeStepException(e, 'SALT_API_FAILURE', node)
+
+        except requests.exceptions.HTTPError as e:
+            raise NodeStepException(e, 'COMMUNICATION_FAILURE', node)
+
+        except IOError as e:
+            raise NodeStepException(e, 'COMMUNICATION_FAILURE', node)
 
     def extract_secure_data(self):
         """
@@ -290,3 +375,14 @@ class SaltApiNodeStepPlugin(object):
 
         except InterruptedError:
             logger.warning("Interrupted while trying to logout.")
+
+
+def main():  # pragma: no cover
+
+    client = SaltApiNodeStepPlugin()
+
+    client.execute_node_step()
+
+
+if __name__ == "__main__":
+    main()
