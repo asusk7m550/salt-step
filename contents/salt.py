@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
+
 class SaltApiNodeStepPlugin(object):
 
     def __init__(self, endpoint=None, username=None, password=None, eauth='auto'):
@@ -33,11 +34,11 @@ class SaltApiNodeStepPlugin(object):
 
         url = f"{self.endpoint}/login"
 
-        logger.info("Authenticating with salt-api endpoint: [%s]", url);
+        logger.info("Authenticating with salt-api endpoint: [%s]", url)
 
         response = requests.post(url,
-                                headers=headers,
-                                data=json.dumps(data))
+            headers=headers,
+            data=json.dumps(data))
 
         if response.status_code == 200:
             try:

@@ -5,6 +5,7 @@ from unittest import mock
 
 from salt import SaltApiNodeStepPlugin
 
+
 class TestSaltApiNodeStepPlugin(unittest.TestCase):
 
     def setUp(self):
@@ -15,14 +16,13 @@ class TestSaltApiNodeStepPlugin(unittest.TestCase):
         self.PARAM_FUNCTION = "some.function"
         self.PARAM_USER = "user"
         self.PARAM_PASSWORD = "password&!@$*"
-        self.AUTH_TOKEN = "123qwe";
-        self.OUTPUT_JID = "20130213093536481553";
-        self.HOST_RESPONSE = "\"some response\"";
+        self.AUTH_TOKEN = "123qwe"
+        self.OUTPUT_JID = "20130213093536481553"
+        self.HOST_RESPONSE = "\"some response\""
 
         self.plugin = SaltApiNodeStepPlugin(self.PARAM_ENDPOINT, self.PARAM_USER, self.PARAM_PASSWORD, self.PARAM_EAUTH)
 
     @mock.patch('requests.post')
-
     def test_authenticate_with_ok_response_code(self, mock_post):
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {"return": [{
@@ -43,7 +43,7 @@ class TestSaltApiNodeStepPlugin(unittest.TestCase):
         self.assertEqual(result, self.AUTH_TOKEN)
         mock_post.assert_called_once_with(
             self.PARAM_ENDPOINT+'/login',
-            headers = {"Accept": "application/json", "Content-Type": "application/json"},
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps({
                 "username": self.PARAM_USER,
                 "password": self.PARAM_PASSWORD,
