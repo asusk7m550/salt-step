@@ -53,3 +53,27 @@ class SaltApiNodeStepPlugin(object):
             return None
         else:
             raise Exception(f"Unexpected failure interacting with salt-api {response.text()}")
+
+    def logoutQuietly(self, authToken):
+        """
+        Remove or invalidate sessions
+        :header authToken: The token of the session
+        """
+
+        headers = {
+            "X-Auth-Token": authToken,
+        }
+
+        url = f"{self.endpoint}/logout"
+
+        logger.info("Logging out with salt-api endpoint: [%s]", url)
+
+        try:
+            requests.post(url,
+                          headers=headers)
+        except requests.exceptions.ConnectionError as e:
+            logger.warning("Encountered exception (%s) while trying to logout. Ignoring...", e)
+            pass
+
+        except InterruptedError:
+            logger.warning("Interrupted while trying to logout.")
