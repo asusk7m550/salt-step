@@ -90,7 +90,7 @@ class SaltApiNodeStepPlugin(object):
             parsed_url = urlparse(self.endpoint)
             if parsed_url.scheme not in ['http', 'https']:
                 raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
-        except:
+        except Exception:
             raise SaltStepValidationException('SALT_API_END_POINT', f"{self.endpoint} is not a valid endpoint", 'ARGUMENTS_INVALID', '')
 
     def authenticate(self):
