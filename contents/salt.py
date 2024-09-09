@@ -160,6 +160,8 @@ class SaltApiNodeStepPlugin(object):
 
             if handler.get_standard_error():
                 logger.info(handler.get_standard_error())
+
+            if handler.get_exit_code():
                 raise NodeStepException("Execution failed on minion with exit code %d" % handler.get_exit_code(), 'EXIT_CODE', node)
 
         except SaltReturnResponseParseException as e:
