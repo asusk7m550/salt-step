@@ -7,14 +7,9 @@
 
 name: Create Package
 
-#on:
-#  release:
-#    types: [created]
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -40,5 +35,7 @@ jobs:
 
     - name: Release
       uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/heads/release/')
       with:
+        tag_name: ${{steps.previous_tag.outputs.tag}}
         files: salt-plugin.zip
