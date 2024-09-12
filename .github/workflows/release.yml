@@ -34,7 +34,7 @@ jobs:
     - name: Build release package
       run: |
         mkdir -p salt-plugin/contents
-        cp -r salt.py util output salt-plugin/contents/
+        cp -r contents/salt.py contents/util contents/output salt-plugin/contents/
         cp plugin.yaml salt-plugin/
         zip -r salt-plugin.zip salt-plugin
 
