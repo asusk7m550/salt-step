@@ -1,0 +1,45 @@
+name: "salt-plugin"
+version: "0.0.2"
+rundeckPluginVersion: 1.2
+author: "© Proserve, Jasper Aikema"
+date: "2024-09-09T16:24:00Z"
+url: "https://www.proserve.nl"
+description: "Allows Rundeck to delegate tasks to a Salt master by executing the request over salt-api"
+tags:
+    - WorkflowNodeStep
+providers:
+  - name: salt-api-exec
+    title: Remote Salt Execution
+    description: Run a command on a remote salt master through salt-api.
+    service: WorkflowNodeStep
+    plugin-type: script
+    script-interpreter: /usr/bin/python3
+    script-file: salt.py
+    script-args: ${node.hostname}
+    config:
+      - name: saltEndpoint
+        title: SALT_API_END_POINT
+        description: "Salt Api end point"
+        type: String
+        default: "${option.SALT_API_END_POINT}"
+        required: true
+        scope: Instance
+      - name: saltApiVersion
+        title: SALT_API_VERSION
+        description: "Salt Api version"
+        type: String
+        required: false
+        scope: Instance
+      - name: function
+        title: SALT_API_FUNCTION
+        description: "Function (including args) to invoke on salt minions"
+        type: String
+        required: true
+        scope: Instance
+      - name: eAuth
+        title: SALT_API_EAUTH
+        description: "Salt Master's external authentication system"
+        type: String
+        default: "${option.SALT_API_EAUTH}"
+        required: true
+        scope: Instance
