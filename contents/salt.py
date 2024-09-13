@@ -8,8 +8,8 @@ import logging
 from urllib.parse import urlparse
 
 sys.path.append(os.getcwd())
-from contents.util.exponential_backoff_timer import ExponentialBackoffTimer
-from contents.output.salt_return_handler_registry import returnHandlerRegistry
+from util.exponential_backoff_timer import ExponentialBackoffTimer
+from output.salt_return_handler_registry import returnHandlerRegistry
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')

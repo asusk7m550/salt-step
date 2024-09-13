@@ -2,8 +2,8 @@ import sys, os
 import unittest
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
-from contents.salt import SaltStepValidationException
+from salt import SaltApiNodeStepPlugin
+from salt import SaltStepValidationException
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):

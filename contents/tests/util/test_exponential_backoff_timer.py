@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.append(os.getcwd())
-from contents.util.exponential_backoff_timer import ExponentialBackoffTimer
+from util.exponential_backoff_timer import ExponentialBackoffTimer
 
 
 class TestExponentialBackoffTimer(unittest.TestCase):

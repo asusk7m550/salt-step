@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
+from salt import SaltApiNodeStepPlugin
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):

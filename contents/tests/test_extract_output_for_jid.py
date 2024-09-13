@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 from unittest import mock
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
-from contents.salt import SaltApiException
+from salt import SaltApiNodeStepPlugin
+from salt import SaltApiException
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):

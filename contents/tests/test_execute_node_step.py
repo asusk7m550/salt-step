@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 from unittest import mock
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
-from contents.salt import NodeStepException, SaltStepValidationException, SaltApiException, SaltTargettingMismatchException
+from salt import SaltApiNodeStepPlugin
+from salt import NodeStepException, SaltStepValidationException, SaltApiException, SaltTargettingMismatchException
 
 from requests.exceptions import HTTPError
 

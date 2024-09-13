@@ -4,7 +4,7 @@ import json
 from unittest import mock
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
+from salt import SaltApiNodeStepPlugin
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):

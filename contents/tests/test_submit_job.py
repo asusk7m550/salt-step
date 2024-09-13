@@ -4,8 +4,8 @@ import json
 from unittest import mock
 
 sys.path.append(os.getcwd())
-from contents.salt import SaltApiNodeStepPlugin
-from contents.salt import SaltTargettingMismatchException
+from salt import SaltApiNodeStepPlugin
+from salt import SaltTargettingMismatchException
 
 
 class TestSaltApiNodeStepPlugin(unittest.TestCase):
@@ -174,7 +174,7 @@ class TestSaltApiNodeStepPlugin(unittest.TestCase):
 
             for line in cm.output:
 
-                match = re.match(r'DEBUG:saltapinodestepplugin:Submitting job with arguments \[(.*)\]', line)
+                match = re.match(r'DEBUG:salt:Submitting job with arguments \[(.*)\]', line)
                 if match is not None:
                     self.assertEqual(data.replace('"', "'"), match[1])
 
